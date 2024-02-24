@@ -1,13 +1,30 @@
-import { fork } from "child_process";
+import { ChildProcess, fork } from "child_process";
+import { Server } from "./server";
+import { cpus } from "os";
 
-console.log("Hello, world!");
+class LoadBalancer {
+  constructor() {
+    const workers = this.createWorkers(cpus().length);
+    this.startServer(workers);
+  }
 
-const worker = fork("./src/worker.ts", [], {
-  execArgv: ["-r", "ts-node/register"],
-});
+  private createWorkers(numberOfWorkers: number): ChildProcess[] {
+    const workers: ChildProcess[] = [];
+    for (let i = 0; i < numberOfWorkers; i++) {
+      workers.push(this.createWorker());
+    }
+    return workers;
+  }
 
-worker.on("message", (msg) => {
-  console.log(`Received message from worker: ${JSON.stringify(msg)}`);
-});
+  private createWorker(): ChildProcess {
+    return fork("./src/worker.ts", [], {
+      execArgv: ["-r", "ts-node/register"],
+    });
+  }
 
-worker.send("Hello from index!");
+  private startServer(workers: ChildProcess[]): void {
+    new Server(3000, workers);
+  }
+}
+
+new LoadBalancer();
