@@ -1,3 +1,1 @@
-<!-- @format -->
-
 # Load Balancer Example
